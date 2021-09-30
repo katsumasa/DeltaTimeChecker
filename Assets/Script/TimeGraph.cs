@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Rendering;
 
 [ExecuteInEditMode]
 public class TimeGraph : MonoBehaviour
@@ -174,6 +174,21 @@ public class TimeGraph : MonoBehaviour
             Application.targetFrameRate = targetFrameRate;
         }
         GUILayout.Space(10);
+
+#if UNITY_2019_3_OR_NEWER
+        GUILayout.Label("OnDemandRendering.effectiveRenderFrameRate " + OnDemandRendering.effectiveRenderFrameRate + "[FPS]");
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("OnDemandRendering.renderFrameInterval " + OnDemandRendering.renderFrameInterval);
+        idx = OnDemandRendering.renderFrameInterval;
+        idx = (int)GUILayout.HorizontalSlider(idx, 0f, 10);
+        if(OnDemandRendering.renderFrameInterval != idx)
+        {
+            OnDemandRendering.renderFrameInterval = idx;
+        }
+        GUILayout.EndHorizontal();
+        GUILayout.Space(10);
+#endif
+
 
         if (GUILayout.Button("Reset"))
         {
