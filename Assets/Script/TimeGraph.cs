@@ -11,9 +11,13 @@ public class TimeGraph : MonoBehaviour
     List<float> deltaTimes;
     List<float> realtimeSinceStartups;
     List<float> smoothDeltaTimes;
+    List<float> effectiveRenderFrameRates;
+    List<float> willCurrentFrameRenders;
     bool toggleDeltaTimes;
     bool toggleRealtimeSinceStartup;
     bool toggleSmoothDeltaTime;
+    bool toggleEffectiveRenderFrameRate;
+    bool toggleWillCurrentFrameRender;
     float realtimeSinceStartupLast;
     int warmUpCount;
 
@@ -70,6 +74,8 @@ public class TimeGraph : MonoBehaviour
         public static GUIContent deltaTime = new GUIContent("deltaTime:[ms]");
         public static GUIContent realtimeSinceStartup = new GUIContent("realtimeSinceStartup  - Last realtimeSinceStartup :[ms]");
         public static GUIContent smoothDeltaTime = new GUIContent("smoothDeltaTime:[ms]");
+        public static GUIContent effectiveRenderFrameRate = new GUIContent("OnDemandRendering.effectiveRenderFrameRate");
+        public static GUIContent willCurrentFrameRender = new GUIContent("willCurrentFrameRender:");
     }
 
     // Start is called before the first frame update
@@ -83,7 +89,9 @@ public class TimeGraph : MonoBehaviour
         realtimeSinceStartupLast = Time.realtimeSinceStartup;
         toggleDeltaTimes = true;
         toggleRealtimeSinceStartup = true;
-        toggleSmoothDeltaTime = false;
+        toggleSmoothDeltaTime = true;
+        toggleEffectiveRenderFrameRate = true;
+        toggleWillCurrentFrameRender = true;
     }
 
 
@@ -92,6 +100,8 @@ public class TimeGraph : MonoBehaviour
         deltaTimes = new List<float>();
         realtimeSinceStartups = new List<float>();
         smoothDeltaTimes = new List<float>();
+        effectiveRenderFrameRates = new List<float>();
+        willCurrentFrameRenders = new List<float>();
     }
 
 
@@ -111,7 +121,7 @@ public class TimeGraph : MonoBehaviour
             {
                 deltaTimes.RemoveAt(0);
             }            
-           Styles.deltaTime = new GUIContent(GraphLayout.Format("deltaTime: {0,3:F1}[ms]", deltaTimes[deltaTimes.Count - 1]));
+           Styles.deltaTime = new GUIContent(GraphLayout.Format("deltaTime: {0,3:F3}[ms]  {1:F1}[FPS]", deltaTimes[deltaTimes.Count - 1],1000.0f/ deltaTimes[deltaTimes.Count - 1]));
 
             realtimeSinceStartups.Add((realTime - realtimeSinceStartupLast) * 1000);
             if (realtimeSinceStartups.Count > 400)
@@ -126,6 +136,20 @@ public class TimeGraph : MonoBehaviour
                 smoothDeltaTimes.RemoveAt(0);
             }
             Styles.smoothDeltaTime = new GUIContent(GraphLayout.Format("smoothDeltaTime: {0,3:F1}[ms]", smoothDeltaTimes[deltaTimes.Count - 1]));
+
+            effectiveRenderFrameRates.Add(OnDemandRendering.effectiveRenderFrameRate);
+            if(effectiveRenderFrameRates.Count >400)
+            {
+                effectiveRenderFrameRates.RemoveAt(0);
+            }
+            Styles.effectiveRenderFrameRate = new GUIContent(GraphLayout.Format("OnDemandRendering.effectiveRenderFrameRate:{0}[FPS]",OnDemandRendering.effectiveRenderFrameRate));
+
+            willCurrentFrameRenders.Add(OnDemandRendering.willCurrentFrameRender ? 1.0f : 0f);
+            if(willCurrentFrameRenders.Count > 400)
+            {
+                willCurrentFrameRenders.RemoveAt(0);
+            }
+            Styles.willCurrentFrameRender = new GUIContent(GraphLayout.Format("willCurrentFrameRenders:{0}", OnDemandRendering.willCurrentFrameRender ? "true" : "false"));
         }
 
         realtimeSinceStartupLast = realTime;
@@ -133,39 +157,42 @@ public class TimeGraph : MonoBehaviour
 
     private void OnGUI()
     {
-        var rect = new Rect(40, 20, 16, 16);
+        var rect = new Rect(40, 10, 16, 16);
         toggleDeltaTimes = GUI.Toggle(rect, toggleDeltaTimes, "");
-        rect = new Rect(40, 20, 400, 150);        
+        rect = new Rect(40, 10, 400, 100);        
         GraphLayout.FloatField(Styles.deltaTime, deltaTimes, texture, Color.yellow, rect,toggleDeltaTimes);
 
-        rect = new Rect(40, 180, 16,16);
+        rect = new Rect(40, 120, 16,16);
         toggleRealtimeSinceStartup = GUI.Toggle(rect, toggleRealtimeSinceStartup, "");
-        rect = new Rect(40, 180, 400, 150);
+        rect = new Rect(40, 120, 400, 100);
         GraphLayout.FloatField(Styles.realtimeSinceStartup, realtimeSinceStartups, texture, Color.green, rect,toggleRealtimeSinceStartup);
 
 
-        rect = new Rect(40, 350, 16, 16);
+        rect = new Rect(40, 230, 16, 16);
         toggleSmoothDeltaTime = GUI.Toggle(rect, toggleSmoothDeltaTime, "");
-        rect = new Rect(40, 350, 400, 150);
+        rect = new Rect(40, 230, 400, 100);
         GraphLayout.FloatField(Styles.smoothDeltaTime, smoothDeltaTimes, texture, Color.cyan, rect,toggleSmoothDeltaTime);
 
+        rect = new Rect(40, 340, 16, 16);
+        toggleSmoothDeltaTime = GUI.Toggle(rect, toggleEffectiveRenderFrameRate, "");
+        rect = new Rect(40, 340, 400, 100);
+        GraphLayout.FloatField(Styles.effectiveRenderFrameRate, effectiveRenderFrameRates, texture, Color.magenta, rect, toggleEffectiveRenderFrameRate);
 
-        GUILayoutUtility.GetRect(520, 500);
 
-        GUILayout.Label("Screen.currentResolution.refreshRate " + Screen.currentResolution.refreshRate + "[Hz]");
+        rect = new Rect(40, 450, 16, 16);
+        toggleWillCurrentFrameRender = GUI.Toggle(rect,toggleWillCurrentFrameRender,"");
+        rect = new Rect(40, 450, 400, 100);
+        GraphLayout.FloatField(Styles.willCurrentFrameRender, willCurrentFrameRenders, texture, Color.blue, rect, toggleEffectiveRenderFrameRate);
 
-        GUILayout.Space(5);
-
+        GUILayoutUtility.GetRect(520, 560);
+        GUILayout.Label("Screen.currentResolution.refreshRate " + Screen.currentResolution.refreshRate + "[Hz]");        
         GUILayout.Label("QualitySettings.vSyncCount " + QualitySettings.vSyncCount);
         var vSyncCount = GUILayout.Toolbar(QualitySettings.vSyncCount, VsyncCounts);        
         if(QualitySettings.vSyncCount != vSyncCount)
         {
             QualitySettings.vSyncCount = vSyncCount;
-        }
-
-        GUILayout.Space(5);
-        GUILayout.Label("Application.targetFrameRate " + Application.targetFrameRate + "[FPS]");
-        
+        }        
+        GUILayout.Label("Application.targetFrameRate " + Application.targetFrameRate + "[FPS]");        
         var idx = GetTargetFrameIdx(Application.targetFrameRate);
         idx = GUILayout.Toolbar(idx, targetFrameRates);
         var targetFrameRate = GetTargetFrameRate(idx);
@@ -173,27 +200,26 @@ public class TimeGraph : MonoBehaviour
         {
             Application.targetFrameRate = targetFrameRate;
         }
-        GUILayout.Space(10);
 
 #if UNITY_2019_3_OR_NEWER
         GUILayout.Label("OnDemandRendering.effectiveRenderFrameRate " + OnDemandRendering.effectiveRenderFrameRate + "[FPS]");
         GUILayout.BeginHorizontal();
         GUILayout.Label("OnDemandRendering.renderFrameInterval " + OnDemandRendering.renderFrameInterval);
         idx = OnDemandRendering.renderFrameInterval;
-        idx = (int)GUILayout.HorizontalSlider(idx, 0f, 10);
+        idx = (int)GUILayout.HorizontalSlider(idx, 0f, 20);
         if(OnDemandRendering.renderFrameInterval != idx)
         {
             OnDemandRendering.renderFrameInterval = idx;
         }
-        GUILayout.EndHorizontal();
-        GUILayout.Space(10);
+        GUILayout.EndHorizontal();        
 #endif
-
-
         if (GUILayout.Button("Reset"))
         {
             deltaTimes.Clear();
             realtimeSinceStartups.Clear();
+            smoothDeltaTimes.Clear();
+            effectiveRenderFrameRates.Clear();
+            willCurrentFrameRenders.Clear();
         }
 
     }
